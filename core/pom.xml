@@ -90,6 +90,20 @@
               <wasmFile>../javy_quickjs4j_plugin.wasm</wasmFile>
             </configuration>
           </execution>
+          <execution>
+            <id>harper</id>
+            <goals>
+              <goal>compile</goal>
+            </goals>
+            <configuration>
+              <name>io.roastedroot.quickjs4j.core.Harper</name>
+              <wasmFile>/home/andreatp/workspace/harper/harper-wasm/pkg/harper_wasm_bg.wasm</wasmFile>
+              <interpretedFunctions>
+                <function>1087</function>
+                <function>1835</function>
+              </interpretedFunctions>
+            </configuration>
+          </execution>
         </executions>
       </plugin>
 

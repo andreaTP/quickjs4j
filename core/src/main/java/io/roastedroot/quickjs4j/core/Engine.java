@@ -169,7 +169,9 @@ public final class Engine implements AutoCloseable {
         GuestFunction guestFunction = invokables.get(moduleName).byName(name);
         if (guestFunction.paramTypes().size() != args.size()) {
             throw new IllegalArgumentException(
-                    "Guest function should be invoked with the expected "
+                    "Guest function "
+                            + name
+                            + " should be invoked with the expected "
                             + guestFunction.paramTypes().size()
                             + " params, but got: "
                             + args.size());
