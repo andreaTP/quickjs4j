@@ -17550,62 +17550,9 @@ var Jimp = createJimp({ formats: defaultFormats, plugins: defaultPlugins });
 // index.mjs
 async function print(original_image) {
   try {
-    const gifBytes = (
-      // new TextEncoder().encode(original_image);
-      new Uint8Array([
-        71,
-        73,
-        70,
-        56,
-        57,
-        97,
-        // GIF89a
-        1,
-        0,
-        1,
-        0,
-        128,
-        0,
-        0,
-        // width=1, height=1, flags
-        255,
-        255,
-        255,
-        0,
-        0,
-        0,
-        // color table
-        33,
-        249,
-        4,
-        1,
-        0,
-        0,
-        0,
-        0,
-        // graphics control extension
-        44,
-        0,
-        0,
-        0,
-        0,
-        1,
-        0,
-        1,
-        0,
-        0,
-        // image descriptor
-        2,
-        2,
-        68,
-        1,
-        0,
-        // image data
-        59
-        // trailer
-      ])
-    );
-    const image = await Jimp.fromBuffer(gifBytes.buffer);
+    console.log("from here " + original_image);
+    const gifBytes = new Uint8Array(JSON.parse(original_image));
+    const image = await Jimp.fromBuffer(gifBytes);
     image.greyscale();
     return "pippo " + await image.getBase64("image/jpeg");
   } catch (err) {
