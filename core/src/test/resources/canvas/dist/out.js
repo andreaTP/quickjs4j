@@ -17554,7 +17554,7 @@ async function print(original_image) {
     const gifBytes = new Uint8Array(JSON.parse(original_image));
     const image = await Jimp.fromBuffer(gifBytes);
     image.greyscale();
-    return "pippo " + await image.getBase64("image/jpeg");
+    return await image.getBase64("image/bmp");
   } catch (err) {
     console.log("ERROR! " + err);
     console.log("Stack:", err.stack);

@@ -5,10 +5,16 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Base64;
 import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 
 public class RunnerTest {
@@ -138,6 +144,62 @@ public class RunnerTest {
         // Assert
         assertTrue(invoked.get());
         assertEquals(84, result);
+
+        runner.close();
+    }
+
+    @Test
+    public void renderImages() throws Exception {
+        // Arrange
+        var invokables =
+                Invokables.builder("from_js")
+                        .add(new GuestFunction("print", List.of(String.class), String.class))
+                        .build();
+
+        var libraryCode =
+                new String(
+                        RunnerTest.class.getResourceAsStream("/canvas/dist/out.js").readAllBytes(),
+                        StandardCharsets.UTF_8);
+
+        var jsEngine = Engine.builder().addInvokables(invokables).build();
+
+        var runner = Runner.builder().withEngine(jsEngine).build();
+
+        // var x = "NzEsNzMsNzAsNTYsNTcsOTcsMSwwLDEsMCwxMjgsMCwwLDI1NSwyNTUsMjU1LDAsMCwwLDMzLDI0OSw0LDEsMCwwLDAsMCw0NCwwLDAsMCwwLDEsMCwxLDAsMCwyLDIsNjgsMSwwLDU5";
+
+        var x = Files.readAllBytes(Path.of("/home/andreatp/Downloads/download.jpg"));
+//        new byte[]{
+//                0x47, 0x49, 0x46, 0x38, 0x39, 0x61,  // GIF89a
+//                0x01, 0x00, 0x01, 0x00, (byte) 0x80, 0x00, 0x00,  // width=1, height=1, flags
+//                (byte) 0xff, (byte) 0xff, (byte) 0xff, 0x00, 0x00, 0x00,  // color table
+//                0x21, (byte) 0xf9, 0x04, 0x01, 0x00, 0x00, 0x00, 0x00,  // graphics control extension
+//                0x2c, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x01, 0x00, 0x00,  // image descriptor
+//                0x02, 0x02, 0x44, 0x01, 0x00,  // image data
+//                0x3b  // trailer
+//        };
+
+        var arr  = new ObjectMapper().createArrayNode();
+        for (var y: x) {
+            arr.add(y);
+        }
+
+        var result =
+                (String)
+                        runner.invokeGuestFunction(
+                                "from_js",
+                                "print",
+                                List.of(new ObjectMapper().writeValueAsString(arr)),
+                                libraryCode);
+
+        // Assert
+        // new ObjectMapper().readerForArrayOf(Byte.class)
+        Files.write(Path.of("debug.base64.bmp"), Base64.getDecoder().decode(result.replace("data:image/bmp;base64,", "").getBytes(StandardCharsets.UTF_8)));
+        Files.write(Path.of("debug.base642.bmp"), Base64.getDecoder().decode(result.getBytes(StandardCharsets.UTF_8)));
+        // Files.write(Path.of("debug.decoded.bmp"), Base64.getDecoder().decode(result.getBytes(StandardCharsets.UTF_8)));
+        System.out.println("result is " + result);
+
+        System.out.println("stdout: " + runner.stdout());
+        System.out.println("stderr: " + runner.stderr());
 
         runner.close();
     }

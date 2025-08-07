@@ -21,7 +21,7 @@ export async function print(original_image) {
 
         image.greyscale();
 
-        return "pippo " + (await image.getBase64("image/jpeg"));
+        return JSON.stringify(await image.getBase64("image/jpg"));
     } catch (err) {
         console.log("ERROR! " + err);
         console.log("Stack:", err.stack);
