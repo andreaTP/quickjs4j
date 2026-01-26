@@ -316,6 +316,35 @@ public class EngineTest {
         compileAndExec(engine, jsSource);
     }
 
+    @Test
+    public void useHighlightJS() throws Exception {
+        var invokables =
+                Invokables.builder("js_api")
+                        .add(new GuestFunction("highlight", List.of(), String.class))
+                        .build();
+
+        var engine = Engine.builder().addInvokables(invokables).build();
+
+        var jsLibrarySource =
+                EngineTest.class.getResourceAsStream("/highlight.js/dist/out.js").readAllBytes();
+
+        var result =
+                (String)
+                        engine.invokeGuestFunction(
+                                "js_api",
+                                "highlight",
+                                List.of(),
+                                new String(jsLibrarySource, StandardCharsets.UTF_8));
+
+        engine.close();
+
+        assertEquals(
+                "<span class=\"hljs-tag\">&lt;<span class=\"hljs-name\">h1</span>&gt;</span>Hello"
+                        + " World!<span class=\"hljs-tag\">&lt;/<span"
+                        + " class=\"hljs-name\">h1</span>&gt;</span>",
+                result);
+    }
+
     public static class ZodResult {
         @JsonProperty("success")
         boolean success;
