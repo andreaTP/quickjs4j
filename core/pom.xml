@@ -24,6 +24,11 @@
       <artifactId>wasi</artifactId>
       <version>${chicory.version}</version>
     </dependency>
+    <dependency>
+      <groupId>io.roastedroot</groupId>
+      <artifactId>redline</artifactId>
+      <version>${redline.version}</version>
+    </dependency>
 
     <!-- Jackson used for function arg/return ser/deser -->
     <dependency>
@@ -56,9 +61,9 @@
   <build>
     <plugins>
       <plugin>
-        <groupId>com.dylibso.chicory</groupId>
-        <artifactId>chicory-compiler-maven-plugin</artifactId>
-        <version>${chicory.version}</version>
+        <groupId>io.roastedroot</groupId>
+        <artifactId>redline-compiler-maven-plugin</artifactId>
+        <version>${redline.version}</version>
         <executions>
           <execution>
             <id>javy-plugin</id>
@@ -68,10 +73,19 @@
             <configuration>
               <name>io.roastedroot.quickjs4j.core.JavyPluginModule</name>
               <wasmFile>../javy_quickjs4j_plugin.wasm</wasmFile>
+              <bytecodeFallback>true</bytecodeFallback>
               <moduleInterface>io.roastedroot.quickjs4j.core.Engine</moduleInterface>
             </configuration>
           </execution>
         </executions>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <configuration>
+          <argLine>--enable-native-access=ALL-UNNAMED</argLine>
+        </configuration>
       </plugin>
 
       <plugin>
@@ -103,4 +117,20 @@
 
     </plugins>
   </build>
+
+  <profiles>
+    <profile>
+      <id>java25</id>
+      <activation>
+        <jdk>[25,)</jdk>
+      </activation>
+      <dependencies>
+        <dependency>
+          <groupId>io.roastedroot</groupId>
+          <artifactId>redline-runner</artifactId>
+          <version>${redline.version}</version>
+        </dependency>
+      </dependencies>
+    </profile>
+  </profiles>
 </project>

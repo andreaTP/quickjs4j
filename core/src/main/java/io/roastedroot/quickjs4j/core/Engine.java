@@ -4,12 +4,10 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.dylibso.chicory.log.Logger;
 import com.dylibso.chicory.log.SystemLogger;
-import com.dylibso.chicory.runtime.ByteArrayMemory;
 import com.dylibso.chicory.runtime.HostFunction;
 import com.dylibso.chicory.runtime.ImportValues;
 import com.dylibso.chicory.runtime.Instance;
-import com.dylibso.chicory.runtime.Memory;
-import com.dylibso.chicory.runtime.TrapException;
+import com.dylibso.chicory.wasm.ChicoryException;
 import com.dylibso.chicory.wasi.WasiOptions;
 import com.dylibso.chicory.wasi.WasiPreview1;
 import com.dylibso.chicory.wasm.types.MemoryLimits;
@@ -17,6 +15,7 @@ import com.dylibso.chicory.wasm.types.ValueType;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.roastedroot.redline.api.RedlineInstance;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -36,6 +35,7 @@ public final class Engine implements AutoCloseable {
     private final WasiOptions wasiOpts;
 
     private final WasiPreview1 wasi;
+    private final RedlineInstance redlineInstance;
     private final Instance instance;
     private final Engine_ModuleExports exports;
 
@@ -64,7 +64,7 @@ public final class Engine implements AutoCloseable {
             Map<String, Builtins> builtins,
             Map<String, Invokables> invokables,
             ObjectMapper mapper,
-            Function<MemoryLimits, Memory> memoryFactory,
+            MemoryLimits memoryLimits,
             ScriptCache cache,
             Logger logger,
             ByteArrayOutputStream stdout,
@@ -99,16 +99,18 @@ public final class Engine implements AutoCloseable {
                             this.builtins.put(e.getKey(), builder.build());
                         });
         this.invokables = invokables;
-        instance =
-                Instance.builder(JavyPluginModule.load())
-                        .withMemoryFactory(memoryFactory)
-                        .withMachineFactory(JavyPluginModule::create)
+        var builder =
+                JavyPluginModule.builder()
                         .withImportValues(
                                 ImportValues.builder()
                                         .addFunction(wasi.toHostFunctions())
                                         .addFunction(invokeFn)
-                                        .build())
-                        .build();
+                                        .build());
+        if (memoryLimits != null) {
+            builder.withMemoryLimits(memoryLimits);
+        }
+        redlineInstance = builder.build();
+        instance = redlineInstance.instance();
         exports = new Engine_ModuleExports(instance);
         exports.initializeRuntime();
     }
@@ -402,7 +404,7 @@ public final class Engine implements AutoCloseable {
             cache.set(js, readCompiled(aggregatedCodePtr));
 
             return aggregatedCodePtr; // 32 bit
-        } catch (TrapException e) {
+        } catch (ChicoryException e) {
             try {
                 stderr.flush();
                 stdout.flush();
@@ -432,7 +434,7 @@ public final class Engine implements AutoCloseable {
                     0, // fn_name_ptr
                     0 // fn_name_len
                     );
-        } catch (TrapException e) {
+        } catch (ChicoryException e) {
             try {
                 stderr.flush();
                 stdout.flush();
@@ -538,7 +540,7 @@ public final class Engine implements AutoCloseable {
         private List<Builtins> builtins = new ArrayList<>();
         private List<Invokables> invokables = new ArrayList<>();
         private ObjectMapper mapper;
-        private Function<MemoryLimits, Memory> memoryFactory;
+        private MemoryLimits memoryLimits;
         private ScriptCache cache;
         private Logger logger;
         private ByteArrayOutputStream stdout;
@@ -561,8 +563,8 @@ public final class Engine implements AutoCloseable {
             return this;
         }
 
-        public Builder withMemoryFactory(Function<MemoryLimits, Memory> memoryFactory) {
-            this.memoryFactory = memoryFactory;
+        public Builder withMemoryLimits(MemoryLimits memoryLimits) {
+            this.memoryLimits = memoryLimits;
             return this;
         }
 
@@ -590,9 +592,6 @@ public final class Engine implements AutoCloseable {
             if (mapper == null) {
                 mapper = DEFAULT_OBJECT_MAPPER;
             }
-            if (memoryFactory == null) {
-                memoryFactory = ByteArrayMemory::new;
-            }
             Map<String, Builtins> finalBuiltins = new HashMap<>();
             // TODO: any validation to be done here?
             for (var builtin : builtins) {
@@ -619,7 +618,7 @@ public final class Engine implements AutoCloseable {
                     finalBuiltins,
                     finalInvokables,
                     mapper,
-                    memoryFactory,
+                    memoryLimits,
                     cache,
                     logger,
                     stdout,

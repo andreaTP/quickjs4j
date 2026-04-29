@@ -145,7 +145,6 @@ public class EngineTest {
         var codePtr = jsRunner.compile(code);
         jsRunner.exec(codePtr);
         jsRunner.free(codePtr);
-        jsRunner.close();
     }
 
     @Test
