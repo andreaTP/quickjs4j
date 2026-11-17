@@ -33,7 +33,10 @@
     <module>annotations</module>
     <module>core</module>
     <module>it</module>
+    <module>jackson2</module>
+    <module>jackson3</module>
     <module>processor</module>
+    <module>quickjs4j</module>
     <module>scripting</module>
   </modules>
 
@@ -74,6 +77,7 @@
     <!-- runtime versions -->
     <endive.version>1.2.0</endive.version>
     <jackson.version>2.23.0</jackson.version>
+    <jackson3.version>3.3.0</jackson3.version>
     <javaparser.version>3.28.2</javaparser.version>
   </properties>
 
